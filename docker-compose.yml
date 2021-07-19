@@ -1,0 +1,54 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      args:
+        user: wadson
+        uid: 1000
+      context: ./
+      dockerfile: Dockerfile
+    image: laravel-app
+    container_name: event-list-api
+    restart: unless-stopped
+    working_dir: /var/www/
+    volumes:
+      - ./:/var/www
+    networks:
+      - local_app
+  nginx:
+    image: nginx:alpine
+    container_name: event-list-nginx
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    volumes:
+      - ./:/var/www
+      - ./docker-compose-nginx/conf.d:/etc/nginx/conf.d/
+    networks:
+      - local_app
+  db:
+    image: mysql:5.7
+    container_name: event-list-db
+    restart: unless-stopped
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      SERVICE_TAGS: dev
+      SERVICE_NAME: mysql
+    volumes:
+      - mysql-data-local-app:/var/lib/mysql
+      - ./docker-compose-db/mysql:/docker-entrypoint-initdb.d
+    networks:
+      - local_app
+          
+networks:
+  local_app:
+    driver: bridge
+
+volumes:
+  mysql-data-local-app:
